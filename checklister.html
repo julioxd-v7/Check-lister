@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Checklist Diário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EDF0F3; --surface:#FFFFFF; --surface-2:#F6F8FA; --ink:#16202B; --muted:#5B6775; --line:#D6DDE4;
+  --accent:#1F6F8B; --accent-ink:#FFFFFF; --accent-soft:#E1EFF4;
+  --ok:#2E7D4F; --ok-soft:#E3F2E8; --warn:#9A6412; --warn-soft:#FBF0DC; --bad:#B93A2C; --bad-soft:#FBE8E5;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F151B; --surface:#172029; --surface-2:#1C2731; --ink:#E4EAF0; --muted:#95A3B1; --line:#283541;
+    --accent:#5DB4D1; --accent-ink:#0A1318; --accent-soft:#1A3441;
+    --ok:#62C48F; --ok-soft:#173327; --warn:#E3B45A; --warn-soft:#352A15; --bad:#F07E6E; --bad-soft:#3A1E1B;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F151B; --surface:#172029; --surface-2:#1C2731; --ink:#E4EAF0; --muted:#95A3B1; --line:#283541;
+  --accent:#5DB4D1; --accent-ink:#0A1318; --accent-soft:#1A3441;
+  --ok:#62C48F; --ok-soft:#173327; --warn:#E3B45A; --warn-soft:#352A15; --bad:#F07E6E; --bad-soft:#3A1E1B;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-0.01em}
+h1{font-size:30px;line-height:1.1}
+h2{font-size:19px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.date-line{display:flex;flex-direction:column;gap:4px}
+.summary{display:flex;align-items:center;gap:14px}
+.ring{width:64px;height:64px;flex:none}
+.ring circle{fill:none;stroke-width:7}
+.ring .track{stroke:var(--line)}
+.ring .val{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .4s}
+.summary-text{display:flex;flex-direction:column}
+.summary-text strong{font-family:var(--mono);font-size:22px;font-weight:500}
+.summary-text span{color:var(--muted);font-size:13px}
+
+.alerts{display:flex;flex-direction:column;gap:8px}
+.alert{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:10px;border:1px solid transparent}
+.alert.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.alert.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.alert .dot{width:8px;height:8px;border-radius:50%;margin-top:8px;flex:none}
+.alert.bad .dot{background:var(--bad)} .alert.warn .dot{background:var(--warn)}
+.alert b{font-weight:600}
+.alert .body{flex:1;min-width:0}
+.alert .linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-weight:500}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+form.add{display:grid;grid-template-columns:1fr auto auto auto;gap:8px}
+@media (max-width:560px){form.add{grid-template-columns:1fr 1fr}form.add input[type=text]{grid-column:1/-1}form.add button{grid-column:1/-1}}
+.field{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-width:0}
+.field::placeholder{color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 12px;font-weight:500;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{padding:5px 9px;font-size:13px}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+
+ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+li.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 4px;border-top:1px solid var(--line)}
+li.item:first-child{border-top:0}
+.check{appearance:none;width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;display:grid;place-items:center;margin:0;cursor:pointer;background:var(--surface)}
+.check:checked{background:var(--ok);border-color:var(--ok)}
+.check:checked::after{content:"";width:6px;height:11px;border:solid var(--surface);border-width:0 2.5px 2.5px 0;transform:translateY(-1px) rotate(45deg)}
+.item-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.item-title{overflow-wrap:anywhere}
+li.done .item-title{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.chip{font-family:var(--mono);font-size:12px;padding:1px 7px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
+.chip.ok{color:var(--ok);background:var(--ok-soft);border-color:transparent}
+.chip.bad{color:var(--bad);background:var(--bad-soft);border-color:transparent}
+.chip.warn{color:var(--warn);background:var(--warn-soft);border-color:transparent}
+.chip.acc{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+li.overdue{box-shadow:inset 3px 0 0 var(--bad);padding-left:12px}
+.actions{display:flex;gap:4px}
+.icon-btn{background:none;border:1px solid transparent;border-radius:6px;padding:4px 8px;color:var(--muted);font-size:13px}
+.icon-btn:hover{border-color:var(--line);color:var(--ink)}
+.icon-btn.confirm{color:var(--bad);border-color:var(--bad)}
+.edit-row{display:grid;grid-template-columns:1fr auto auto auto;gap:6px}
+@media (max-width:560px){.edit-row{grid-template-columns:1fr 1fr}.edit-row input[type=text]{grid-column:1/-1}}
+
+.empty{color:var(--muted);padding:14px 4px;display:flex;flex-direction:column;gap:10px}
+.suggest{display:flex;flex-wrap:wrap;gap:6px}
+
+ul.history{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:520px;overflow:auto}
+.h-row{width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;border:1px solid transparent;background:none;text-align:left}
+.h-row:hover{background:var(--surface-2)}
+.h-row.sel{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.h-date{display:flex;flex-direction:column;line-height:1.25}
+.h-date small{color:var(--muted);font-size:12px}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.bar.partial i{background:var(--warn)}
+.bar.zero i{background:var(--bad)}
+
+.detail{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.detail ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.detail li{display:flex;gap:8px;align-items:baseline;justify-content:space-between;font-size:14px}
+.detail li span:first-child{min-width:0;overflow-wrap:anywhere}
+.export{display:flex;flex-wrap:wrap;gap:6px}
+
+.notice{font-size:13px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:14px;max-width:calc(100% - 32px);z-index:10}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+[hidden]{display:none!important}
+body{margin:0}
+.backup{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="date-line">
+      <span class="eyebrow" id="weekday">Hoje</span>
+      <h1 id="today-title">Checklist Diário</h1>
+    </div>
+    <div class="summary" aria-live="polite">
+      <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
+        <circle class="track" cx="32" cy="32" r="27"></circle>
+        <circle class="val" id="ring-val" cx="32" cy="32" r="27" transform="rotate(-90 32 32)" stroke-dasharray="169.65" stroke-dashoffset="169.65"></circle>
+      </svg>
+      <div class="summary-text">
+        <strong id="sum-count">0/0</strong>
+        <span id="sum-label">feitos hoje</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="alerts" id="alerts"></div>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-today">
+      <div class="panel-head">
+        <h2 id="h-today">Hoje</h2>
+        <div class="export">
+          <button class="btn small" type="button" data-export="csv" data-day="today">Exportar CSV</button>
+          <button class="btn small" type="button" data-export="txt" data-day="today">Exportar TXT</button>
+        </div>
+      </div>
+      <form class="add" id="add-form" autocomplete="off">
+        <input class="field" type="text" id="new-title" placeholder="Nova tarefa, ex.: Conferir backup do servidor" maxlength="140" aria-label="Nova tarefa" required>
+        <input class="field mono" type="time" id="new-due" aria-label="Horário limite (opcional)" title="Horário limite (opcional)">
+        <select class="field" id="new-kind" aria-label="Repetição">
+          <option value="daily">Todo dia</option>
+          <option value="once">Só hoje</option>
+        </select>
+        <button class="btn primary" type="submit">Adicionar</button>
+      </form>
+      <ul class="items" id="today-list"></ul>
+      <p class="notice" id="mode-notice" hidden></p>
+    </section>
+
+    <section class="panel" aria-labelledby="h-hist">
+      <div class="panel-head">
+        <h2 id="h-hist">Histórico</h2>
+        <span class="eyebrow" id="hist-count"></span>
+      </div>
+      <ul class="history" id="history"></ul>
+      <div class="detail" id="detail" hidden></div>
+      <div class="backup">
+        <span class="notice">Os dados ficam só neste navegador.</span>
+        <div class="export">
+          <button class="btn small" type="button" id="btn-notify">Ativar notificações</button>
+          <button class="btn small" type="button" id="btn-backup">Baixar backup</button>
+          <label class="btn small" for="restore-file">Restaurar backup</label>
+          <input type="file" id="restore-file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const pad = n => String(n).padStart(2,"0");
+  const keyOf = (d = new Date()) => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const dateOf = k => { const [y,m,d] = k.split("-").map(Number); return new Date(y, m-1, d); };
+  const fmtLong = k => dateOf(k).toLocaleDateString("pt-BR",{day:"numeric",month:"long",year:"numeric"});
+  const fmtWeek = k => dateOf(k).toLocaleDateString("pt-BR",{weekday:"long"});
+  const fmtShort = k => dateOf(k).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+  const hhmm = iso => { const d = new Date(iso); return pad(d.getHours())+":"+pad(d.getMinutes()); };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+  const LS_KEY = "checklist-diario-v1";
+  let memMode = true, persistOk = true;
+  function persist(){
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks, days })); persistOk = true; }
+    catch (e) { if (persistOk) toast("Não foi possível salvar neste navegador (modo anônimo ou armazenamento cheio)."); persistOk = false; }
+  }
+  function loadLocal(){
+    try { const raw = localStorage.getItem(LS_KEY); if (!raw) return; const d = JSON.parse(raw); tasks = Array.isArray(d.tasks) ? d.tasks : []; days = d.days && typeof d.days === "object" ? d.days : {}; }
+    catch (e) { console.error(e); }
+  }
+  let tasks = [];            // recurring tasks
+  let days = {};             // date key -> day doc
+  let tasksReady = false, daysReady = false;
+  let todayKey = keyOf();
+  let selected = null;       // history day selected
+  let editing = null;        // {id, title, due}
+  let confirmDel = null;
+  const ensured = {};
+  const queues = {};
+
+  function toast(msg){
+    const t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2800);
+  }
+  function errMsg(e){
+    const c = e && e.code;
+    if (c === "quota_exceeded") return "O armazenamento chegou ao limite. Apague tarefas antigas para liberar espaço.";
+    if (c === "revoked" || c === "not_granted") return "Sem permissão para salvar nesta visualização.";
+    return "Não foi possível salvar agora. Tente de novo em alguns segundos.";
+  }
+  // ---------- storage layer (localStorage) ----------
+  const store = {
+    setTask(t){ const i = tasks.findIndex(x=>x.id===t.id); i>=0 ? tasks[i]=t : tasks.push(t); persist(); render(); return Promise.resolve(); },
+    deleteTask(id){ tasks = tasks.filter(x=>x.id!==id); persist(); render(); return Promise.resolve(); },
+    setDay(k, data){ days[k] = data; persist(); render(); return Promise.resolve(); },
+    updateDayItem(k, id, patch){
+      const d = days[k]; if (!d) return Promise.resolve();
+      d.items[id] = Object.assign({}, d.items[id] || {}, patch);
+      d.updatedAt = new Date().toISOString(); persist(); render(); return Promise.resolve();
+    }
+  };
+  // another tab changed the data
+  window.addEventListener("storage", e => { if (e.key === LS_KEY) { loadLocal(); render(); } });
+
+  const sortItems = arr => arr.slice().sort((a,b) => {
+    const da = a.due || "99:99", dbb = b.due || "99:99";
+    if (da !== dbb) return da < dbb ? -1 : 1;
+    return (a.createdAt || "").localeCompare(b.createdAt || "");
+  });
+  const itemFromTask = t => ({ title: t.title, due: t.due || "", done: false, doneAt: null, createdAt: t.createdAt, kind: "daily" });
+  const itemsOf = k => { const d = days[k]; if (!d || !d.items) return []; return sortItems(Object.entries(d.items).map(([id,v]) => ({id, ...v}))); };
+  const isOverdue = (it, k) => {
+    if (it.done || !it.due || k !== todayKey) return false;
+    const [h,m] = it.due.split(":").map(Number); const n = new Date();
+    return n.getHours()*60+n.getMinutes() > h*60+m;
+  };
+
+  // create today's record once both lists have loaded
+  function ensureToday(){
+    if (!tasksReady || !daysReady) return;
+    const k = todayKey;
+    if (ensured[k]) return;
+    if (days[k]) { ensured[k] = true; return; }
+    if (!tasks.length) return;
+    ensured[k] = true;
+    const items = {}; tasks.forEach(t => items[t.id] = itemFromTask(t));
+    store.setDay(k, { date: k, items, updatedAt: new Date().toISOString() });
+  }
+
+  // ---------- actions ----------
+  $("#add-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const title = $("#new-title").value.trim(); if (!title) return;
+    const due = $("#new-due").value || "";
+    const kind = $("#new-kind").value;
+    const id = uid(); const createdAt = new Date().toISOString();
+    $("#new-title").value = ""; $("#new-due").value = "";
+    await addItem({ id, title, due, createdAt }, kind);
+    $("#new-title").focus();
+  });
+
+  async function addItem(t, kind){
+    const k = todayKey;
+    if (kind === "daily") {
+      await store.setTask(t);
+    }
+    const item = { ...itemFromTask(t), kind };
+    if (days[k]) {
+      await store.updateDayItem(k, t.id, item);
+    } else {
+      const items = {}; tasks.filter(x=>x.id!==t.id).forEach(x => items[x.id] = itemFromTask(x));
+      items[t.id] = item; ensured[k] = true;
+      await store.setDay(k, { date: k, items, updatedAt: new Date().toISOString() });
+    }
+    toast(kind === "daily" ? "Tarefa adicionada à rotina diária" : "Tarefa adicionada só para hoje");
+  }
+
+  function toggle(id, done){
+    const k = todayKey;
+    store.updateDayItem(k, id, { done, doneAt: done ? new Date().toISOString() : null });
+  }
+
+  async function saveEdit(){
+    if (!editing) return;
+    const title = editing.title.trim(); if (!title) { toast("O nome da tarefa não pode ficar vazio."); return; }
+    const due = editing.due || "";
+    const id = editing.id; editing = null;
+    const t = tasks.find(x => x.id === id);
+    if (t) await store.setTask({ ...t, title, due });
+    const cur = days[todayKey] && days[todayKey].items[id];
+    if (cur) await store.updateDayItem(todayKey, id, { title, due });
+    render();
+  }
+
+  async function removeItem(id){
+    const k = todayKey;
+    const isTask = tasks.some(x => x.id === id);
+    if (isTask) await store.deleteTask(id);
+    const d = days[k];
+    if (d && d.items[id] && !d.items[id].done) {
+      const copy = JSON.parse(JSON.stringify(d));
+      delete copy.items[id]; copy.updatedAt = new Date().toISOString();
+      await store.setDay(k, copy);
+    }
+    toast(isTask ? "Tarefa removida da rotina. O histórico fica como estava." : "Tarefa removida de hoje");
+  }
+
+  // ---------- export ----------
+  function buildExport(k, fmt){
+    const items = itemsOf(k);
+    const done = items.filter(i=>i.done).length;
+    if (fmt === "csv") {
+      const q = s => '"' + String(s ?? "").replace(/"/g,'""') + '"';
+      const rows = [["Data","Tarefa","Horário limite","Tipo","Status","Concluída às"].map(q).join(";")];
+      items.forEach(i => rows.push([fmtShort(k)+"/"+k.slice(0,4), i.title, i.due || "", i.kind === "once" ? "Só no dia" : "Diária", i.done ? "Feita" : "Não feita", i.done && i.doneAt ? hhmm(i.doneAt) : ""].map(q).join(";")));
+      return "﻿" + rows.join("\r\n");
+    }
+    const lines = [];
+    lines.push("Checklist de " + fmtWeek(k) + ", " + fmtLong(k));
+    lines.push("Concluídas: " + done + " de " + items.length);
+    lines.push("");
+    items.forEach(i => lines.push((i.done ? "[x] " : "[ ] ") + i.title + (i.due ? "  (até " + i.due + ")" : "") + (i.done && i.doneAt ? "  feita às " + hhmm(i.doneAt) : "")));
+    const pend = items.filter(i=>!i.done);
+    if (pend.length) { lines.push(""); lines.push("Ficaram pendentes:"); pend.forEach(i => lines.push("- " + i.title)); }
+    return lines.join("\r\n");
+  }
+
+  async function doExport(k, fmt){
+    if (!days[k]) { toast("Esse dia ainda não tem registro."); return; }
+    const data = buildExport(k, fmt);
+    const filename = "checklist-" + k + "." + fmt;
+    saveFile(filename, data, fmt === "csv" ? "text/csv;charset=utf-8" : "text/plain;charset=utf-8");
+  }
+  function saveFile(filename, data, type){
+    const blob = new Blob([data], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast("Arquivo " + filename + " baixado");
+  }
+
+  // ---------- backup ----------
+  $("#btn-backup").addEventListener("click", () => {
+    const data = JSON.stringify({ app: "checklist-diario", version: 1, exportedAt: new Date().toISOString(), tasks, days }, null, 2);
+    saveFile("checklist-backup-" + keyOf() + ".json", data, "application/json");
+  });
+  $("#restore-file").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!Array.isArray(d.tasks) || !d.days || typeof d.days !== "object") throw new Error("formato");
+      tasks = d.tasks; days = d.days; Object.keys(ensured).forEach(k => delete ensured[k]);
+      persist(); render(); toast("Backup restaurado");
+    } catch (err) { toast("Esse arquivo não é um backup do Checklist Diário."); }
+  });
+
+  // ---------- system notifications ----------
+  const notified = {};
+  function notifySupported(){ return "Notification" in window; }
+  function updateNotifyBtn(){
+    const b = $("#btn-notify");
+    if (!notifySupported()) { b.hidden = true; return; }
+    if (Notification.permission === "granted") { b.textContent = "Notificações ativas"; b.disabled = true; }
+    else if (Notification.permission === "denied") { b.textContent = "Notificações bloqueadas"; b.disabled = true; b.title = "Libere nas configurações do site no navegador"; }
+  }
+  $("#btn-notify").addEventListener("click", async () => {
+    if (!notifySupported()) return;
+    try { await Notification.requestPermission(); } catch {}
+    updateNotifyBtn();
+  });
+  function checkNotifications(){
+    if (!notifySupported() || Notification.permission !== "granted") return;
+    itemsOf(todayKey).filter(i => isOverdue(i, todayKey)).forEach(i => {
+      const tag = todayKey + ":" + i.id;
+      if (notified[tag]) return; notified[tag] = true;
+      try { new Notification("Tarefa atrasada", { body: i.title + " (até " + i.due + ")", tag }); } catch {}
+    });
+  }
+
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-export]");
+    if (b) { const k = b.dataset.day === "today" ? todayKey : b.dataset.day; doExport(k, b.dataset.export); return; }
+    const a = e.target.closest("[data-act]"); if (!a) return;
+    const id = a.dataset.id, act = a.dataset.act;
+    if (act === "edit") { const it = days[todayKey].items[id]; editing = { id, title: it.title, due: it.due || "" }; confirmDel = null; render(); const f = document.getElementById("edit-title"); f && f.focus(); }
+    else if (act === "cancel") { editing = null; render(); }
+    else if (act === "save") { saveEdit(); }
+    else if (act === "del") {
+      if (confirmDel === id) { confirmDel = null; removeItem(id); }
+      else { confirmDel = id; render(); clearTimeout(a._t); setTimeout(() => { if (confirmDel === id) { confirmDel = null; render(); } }, 4000); }
+    }
+    else if (act === "day") { selected = selected === id ? null : id; render(); }
+    else if (act === "suggest") { const t = { id: uid(), title: a.dataset.title, due: a.dataset.due || "", createdAt: new Date().toISOString() }; addItem(t, "daily"); }
+  });
+  document.addEventListener("change", e => {
+    if (e.target.matches(".check")) toggle(e.target.dataset.id, e.target.checked);
+  });
+  document.addEventListener("input", e => {
+    if (!editing) return;
+    if (e.target.id === "edit-title") editing.title = e.target.value;
+    if (e.target.id === "edit-due") editing.due = e.target.value;
+  });
+  document.addEventListener("keydown", e => {
+    if (!editing) return;
+    if (e.target.id === "edit-title" || e.target.id === "edit-due") {
+      if (e.key === "Enter") { e.preventDefault(); saveEdit(); }
+      if (e.key === "Escape") { editing = null; render(); }
+    }
+  });
+
+  // ---------- render ----------
+  const SUGGESTIONS = [
+    ["Conferir backup da noite", "09:00"], ["Revisar chamados abertos", "10:00"],
+    ["Checar alertas do monitoramento", "11:00"], ["Atualizar status das demandas", "17:00"]
+  ];
+
+  function render(){
+    const af = document.activeElement && document.activeElement.id;
+    renderInner();
+    if (af && (af === "edit-title" || af === "edit-due")) { const el = document.getElementById(af); if (el && document.activeElement !== el) el.focus(); }
+  }
+  function renderInner(){
+    const k = todayKey;
+    const items = itemsOf(k);
+    const done = items.filter(i => i.done).length;
+    const pending = items.length - done;
+
+    $("#weekday").textContent = fmtWeek(k);
+    $("#today-title").textContent = fmtLong(k);
+    $("#sum-count").textContent = done + "/" + items.length;
+    $("#sum-label").textContent = items.length === 0 ? "sem tarefas hoje" : pending === 0 ? "tudo feito hoje" : pending + (pending === 1 ? " pendente" : " pendentes");
+    const C = 169.65; $("#ring-val").setAttribute("stroke-dashoffset", items.length ? String(C * (1 - done/items.length)) : String(C));
+    document.title = pending > 0 ? "(" + pending + ") Checklist Diário" : "Checklist Diário";
+
+    // alerts
+    const alerts = [];
+    const over = items.filter(i => isOverdue(i, k));
+    if (over.length) alerts.push(`<div class="alert bad" role="alert"><span class="dot"></span><div class="body"><b>${over.length === 1 ? "1 tarefa passou do horário" : over.length + " tarefas passaram do horário"}:</b> ${over.map(i => esc(i.title) + ' <span class="chip bad">' + esc(i.due) + '</span>').join(", ")}</div></div>`);
+    const now = new Date();
+    if (!over.length && pending > 0 && now.getHours() >= 17) alerts.push(`<div class="alert warn"><span class="dot"></span><div class="body"><b>Fim do dia chegando.</b> Ainda faltam ${pending} ${pending === 1 ? "tarefa" : "tarefas"}: ${items.filter(i=>!i.done).map(i=>esc(i.title)).join(", ")}.</div></div>`);
+    const prev = Object.keys(days).filter(x => x < k).sort().pop();
+    if (prev) {
+      const pi = itemsOf(prev).filter(i => !i.done);
+      if (pi.length) alerts.push(`<div class="alert warn"><span class="dot"></span><div class="body"><b>Em ${fmtShort(prev)} ficaram ${pi.length} sem fazer:</b> ${pi.map(i => esc(i.title)).join(", ")}. <button class="linkbtn" type="button" data-act="day" data-id="${prev}">Ver o dia</button></div></div>`);
+    }
+    $("#alerts").innerHTML = alerts.join("");
+
+    // today list
+    const list = $("#today-list");
+    if (!tasksReady || !daysReady) {
+      list.innerHTML = `<li class="empty">Carregando…</li>`;
+    } else if (!items.length) {
+      list.innerHTML = `<li class="empty"><span>Nenhuma tarefa ainda. Adicione acima o que você precisa fazer todo dia. A lista se repete sozinha a cada dia e cada dia fica salvo no histórico.</span><span class="eyebrow">Sugestões para começar</span><div class="suggest">${SUGGESTIONS.map(([t,d]) => `<button class="btn small" type="button" data-act="suggest" data-title="${esc(t)}" data-due="${d}">+ ${esc(t)} <span class="mono">${d}</span></button>`).join("")}</div></li>`;
+    } else {
+      list.innerHTML = items.map(i => {
+        if (editing && editing.id === i.id) {
+          return `<li class="item"><span></span><div class="edit-row"><input class="field" type="text" id="edit-title" value="${esc(editing.title)}" maxlength="140" aria-label="Nome da tarefa"><input class="field mono" type="time" id="edit-due" value="${esc(editing.due)}" aria-label="Horário limite"><button class="btn small primary" type="button" data-act="save" data-id="${i.id}">Salvar</button><button class="btn small" type="button" data-act="cancel">Cancelar</button></div><span></span></li>`;
+        }
+        const od = isOverdue(i, k);
+        const chips = [];
+        if (i.due) chips.push(`<span class="chip ${od ? "bad" : ""}">até ${esc(i.due)}</span>`);
+        if (od) chips.push(`<span class="chip bad">atrasada</span>`);
+        if (i.done && i.doneAt) chips.push(`<span class="chip ok">feita às ${hhmm(i.doneAt)}</span>`);
+        if (i.kind === "once") chips.push(`<span class="chip acc">só hoje</span>`);
+        return `<li class="item ${i.done ? "done" : ""} ${od ? "overdue" : ""}">
+          <input class="check" type="checkbox" id="chk-${i.id}" data-id="${i.id}" ${i.done ? "checked" : ""} aria-label="Marcar ${esc(i.title)} como feita">
+          <label class="item-main" for="chk-${i.id}"><span class="item-title">${esc(i.title)}</span>${chips.length ? `<span class="meta">${chips.join("")}</span>` : ""}</label>
+          <div class="actions">
+            <button class="icon-btn" type="button" data-act="edit" data-id="${i.id}">Editar</button>
+            <button class="icon-btn ${confirmDel === i.id ? "confirm" : ""}" type="button" data-act="del" data-id="${i.id}">${confirmDel === i.id ? "Confirmar" : "Remover"}</button>
+          </div></li>`;
+      }).join("");
+    }
+
+    // history
+    const keys = Object.keys(days).sort().reverse();
+    $("#hist-count").textContent = keys.length ? keys.length + (keys.length === 1 ? " dia salvo" : " dias salvos") : "";
+    $("#history").innerHTML = keys.length ? keys.map(d => {
+      const its = itemsOf(d); const dn = its.filter(i=>i.done).length; const pct = its.length ? Math.round(dn/its.length*100) : 0;
+      const cls = pct === 100 ? "" : pct === 0 ? "zero" : "partial";
+      const pend = its.length - dn;
+      return `<li><button class="h-row ${selected === d ? "sel" : ""}" type="button" data-act="day" data-id="${d}">
+        <span class="h-date"><span>${d === k ? "Hoje" : fmtShort(d)}</span><small>${fmtWeek(d)}</small></span>
+        <span class="bar ${cls}" aria-hidden="true"><i style="width:${pct}%"></i></span>
+        <span class="mono">${dn}/${its.length}${pend && d !== k ? ` <span class="chip bad">${pend}</span>` : ""}</span>
+      </button></li>`;
+    }).join("") : `<li class="empty">O histórico começa a encher a partir de hoje. Cada dia fica gravado com o que foi e o que não foi feito.</li>`;
+
+    const det = $("#detail");
+    if (selected && days[selected]) {
+      const its = itemsOf(selected);
+      det.hidden = false;
+      det.innerHTML = `<div class="panel-head"><h3>${fmtWeek(selected)}, ${fmtLong(selected)}</h3></div>
+        <ul>${its.map(i => `<li><span>${i.done ? "✓ " : "✗ "}${esc(i.title)}</span><span class="chip ${i.done ? "ok" : "bad"}">${i.done ? (i.doneAt ? hhmm(i.doneAt) : "feita") : "não feita"}</span></li>`).join("")}</ul>
+        <div class="export"><button class="btn small" type="button" data-export="csv" data-day="${selected}">Exportar CSV</button><button class="btn small" type="button" data-export="txt" data-day="${selected}">Exportar TXT</button></div>`;
+    } else { det.hidden = true; det.innerHTML = ""; }
+
+    ensureToday();
+  }
+
+  // tick: overdue state and day rollover
+  setInterval(() => {
+    const k = keyOf();
+    if (k !== todayKey) { todayKey = k; editing = null; }
+    render();
+  }, 30000);
+
+  // ---------- boot ----------
+  loadLocal();
+  tasksReady = daysReady = true;
+  updateNotifyBtn();
+  render();
+  checkNotifications();
+  setInterval(checkNotifications, 30000);
+})();
+</script>
+</body>
+</html>
